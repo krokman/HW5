@@ -1,127 +1,139 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-
 public class MyHashMap<K, V> implements MyMap<K, V> {
-	private final int DEFAULT_INITIAL_CAPACITY = 16;
-	private final int MAXIMUM_CAPACITY = 1 << 30;
-	private Node<K, V> lastNode;
+	private static final int INITIAL_CAPACITY = 16;
 	private int size = 0;
-	List<Node<K, V>> list;
-
+	private Node<K, V>[] table;
 
 	public MyHashMap(int initialCapacity) {
 		if (initialCapacity < 0)
-			throw new IllegalArgumentException("Illegal initial capacity: " +
-					initialCapacity);
-		if (initialCapacity > MAXIMUM_CAPACITY)
-			initialCapacity = MAXIMUM_CAPACITY;
-		list = new ArrayList<>(initialCapacity);
+			throw new IllegalArgumentException("Illegal initial capacity: " + initialCapacity);
+		table = new Node[initialCapacity];
 	}
 
 	public MyHashMap() {
-		list = new ArrayList<>(DEFAULT_INITIAL_CAPACITY);
+		table = new Node[INITIAL_CAPACITY];
 	}
 
-	static int hash(int hashCode) {
+	private int hash(K key) {
+		int hashCode = key.hashCode();
 		hashCode ^= (hashCode >>> 20) ^ (hashCode >>> 12);
 		return hashCode ^ (hashCode >>> 7) ^ (hashCode >>> 4);
 	}
 
-
-	private Node<K, V> getNode(K key) {
-		Node<K, V> requiredNode = lastNode;
-		for (int i = 0; i < size; i++) {
-			if (requiredNode.key == key) {
-				return requiredNode;
-			}
-			requiredNode = requiredNode.previous;
-		}
-		throw new NoSuchElementException(key + " Wrong Key");
+	private int indexFor(int hashCode, int length) {
+		return hashCode & (length - 1);
 	}
 
-	@Override
 	public void put(K key, V value) {
-		try {
-			Node<K, V> currentNode = getNode(key);
-			currentNode.value = value;
-			list.add(currentNode);
-		} catch (NoSuchElementException e) {
-			if (size == 0) {
-				lastNode = new Node<K, V>(hash(key.hashCode()), key, value, lastNode);
-				list.add(lastNode);
-				size++;
+		ensureTable();
+		if (indexOf(key) != -1) {
+			Node<K, V> current = getNode(key);
+			current.setValue(value);
+		} else {
+			Node<K, V> current = new Node<>(hash(key), key, value, null);
+			int index = indexFor(hash(key), table.length);
+			if (table[index] != null) {
+				table[index].next = current;
 			} else {
-				Node<K, V> currentNode = new Node<>(hash(key.hashCode()), key, value, lastNode);
-				lastNode = currentNode;
-				list.add(lastNode);
-				size++;
+				table[index] = current;
 			}
 		}
+		size++;
 	}
 
-	@Override
+	public V get(K key) {
+		Node<K, V> node = getNode(key);
+		return node.value;
+	}
+
 	public V remove(K key) {
-		Node<K, V> bufferNode = getNode(key);
+		Node<K, V> node = getNode(key);
+		table[indexOf(key)] = null;
 		size--;
-		for (int i = 0; i < size; i++) {
-			if (lastNode.previous == bufferNode) {
-				list.remove(lastNode.previous);
-				lastNode.previous = lastNode.previous.previous;
-				break;
+		return node.value;
+	}
+
+	private int indexOf(K key) {
+		for (int i = 0; i < table.length; i++) {
+			if ((table[i] != null) && (hash(key) == (table[i].hash))) {
+				return i;
 			}
-			lastNode = lastNode.previous;
 		}
-		bufferNode.previous = null;
-		return bufferNode.value;
+		return -1;
 	}
 
-	@Override
 	public void clear() {
-		lastNode = null;
-		size = 0;
-		list = new ArrayList<>();
+		table = new Node[INITIAL_CAPACITY];
 	}
 
-	@Override
 	public int size() {
 		return size;
 	}
 
 	@Override
-	public V get(K key) {
-		Node<K, V> currentNode = getNode(key);
-		return currentNode.value;
-	}
-
-	@Override
 	public String toString() {
-		Node<K, V> currentNode = lastNode;
-		StringBuilder result = new StringBuilder(currentNode.toString());
-		for (int i = 0; i < size - 1; i++) {
-			currentNode = currentNode.previous;
-			result.append(" ").append(currentNode.toString());
+		StringBuilder result = new StringBuilder();
+		int indexOfFirst = 0;
+		for (int i = 0; i < table.length; i++) {
+			if (table[i] != null) {
+				result.append(table[i]);
+				indexOfFirst = i + 1;
+				break;
+			}
+		}
+		for (int i = indexOfFirst; i < table.length; i++) {
+			if (table[i] != null) {
+				result.append(", ").append(table[i]);
+			}
 		}
 		return result.toString();
 	}
 
-	private class Node<K, V> {
-		private K key;
-		private V value;
-		private int hash;
-		private Node<K, V> previous;
+	private Node<K, V> getNode(K key) {
+		for (int i = 0; i < table.length; i++) {
+			if ((table[i] != null) && (table[i].hash == hash(key))) {
+				return table[i];
+			}
+		}
+		return null;
+	}
 
-		public Node(int hash, K key, V value, Node<K, V> previous) {
+	private void ensureTable() {
+		if (size - 1 >= table.length) {
+			Node<K, V>[] tableOld = table;
+			table = new Node[size * 2];
+			for (int i = 0; i < tableOld.length; i++) {
+				if (tableOld[i] != null) {
+					addNode(tableOld[i]);
+				}
+			}
+		}
+	}
+
+	private void addNode(Node<K, V> node) {
+		put(node.key, node.value);
+	}
+
+
+	private static class Node<K, V> {
+		private final int hash;
+		private final K key;
+		private V value;
+		private Node<K, V> next;
+
+		private Node(int hash, K key, V value, Node<K, V> next) {
 			this.hash = hash;
 			this.key = key;
 			this.value = value;
-			this.previous = previous;
+			this.next = next;
+		}
+
+		private void setValue(V newValue) {
+			value = newValue;
 		}
 
 		@Override
 		public String toString() {
-			return "key = " + key +
-					", value = " + value;
+			return "Key - " + key + " Value = " + value;
 		}
 	}
 }
