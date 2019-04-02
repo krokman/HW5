@@ -3,5 +3,5 @@ public interface MyMap<K, V> {
 	V remove(K key);
 	void clear();
 	int size();
-	void get(K key);
+	V get(K key);
 }
