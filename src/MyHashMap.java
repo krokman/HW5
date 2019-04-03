@@ -41,11 +41,13 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
 	}
 
 	public V get(K key) {
+		checkKey(key);
 		Node<K, V> node = getNode(key);
 		return node.value;
 	}
 
 	public V remove(K key) {
+		checkKey(key);
 		Node<K, V> node = getNode(key);
 		table[indexOf(key)] = null;
 		size--;
@@ -96,6 +98,13 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
 		}
 		return null;
 	}
+	private boolean checkKey(K key){
+	for(int i = 0; i < table.length; i ++){
+		if(table[i].hash == hash(key));
+		return true;
+	}
+	throw new IllegalArgumentException("Wrong key -" + key);
+	}
 
 	private void ensureTable() {
 		if (size - 1 >= table.length) {
@@ -103,7 +112,7 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
 			table = new Node[size * 2];
 			for (int i = 0; i < tableOld.length; i++) {
 				if (tableOld[i] != null) {
-					addNode(tableOld[i]);
+					table[indexFor(hash(tableOld[i].key), table.length)] = tableOld[i];
 				}
 			}
 		}
