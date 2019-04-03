@@ -99,12 +99,11 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
 		return null;
 	}
 
-	private boolean checkKey(K key) {
-		for (int i = 0; i < table.length; i++) {
-			if (table[i].hash == hash(key)) ;
-			return true;
+	private void checkKey(K key) {
+		int index = indexOf(key);
+		if (index == -1) {
+			throw new IllegalArgumentException("Wrong key -" + key);
 		}
-		throw new IllegalArgumentException("Wrong key -" + key);
 	}
 
 	private void ensureTable() {
