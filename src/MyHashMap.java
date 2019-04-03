@@ -98,12 +98,13 @@ public class MyHashMap<K, V> implements MyMap<K, V> {
 		}
 		return null;
 	}
-	private boolean checkKey(K key){
-	for(int i = 0; i < table.length; i ++){
-		if(table[i].hash == hash(key));
-		return true;
-	}
-	throw new IllegalArgumentException("Wrong key -" + key);
+
+	private boolean checkKey(K key) {
+		for (int i = 0; i < table.length; i++) {
+			if (table[i].hash == hash(key)) ;
+			return true;
+		}
+		throw new IllegalArgumentException("Wrong key -" + key);
 	}
 
 	private void ensureTable() {
